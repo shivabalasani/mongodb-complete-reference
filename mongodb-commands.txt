@@ -1,1 +1,9 @@
-mongod
+To start MongoDB server : mongod (Create directory C:\data\db if the server fails to start)
+
+If you want a different path to start the server with : mongod --dbpath "C:\development\Software\mongodb-data"
+
+show dbs
+use shop
+db.products.insertOne({name:"A Book",price : 12.99})
+db.products.find().pretty()
+db.products.insertOne({name:"A Computer",price : 122.99, description:"Test", details: {cpu:"Intel i7", memory: 32}})
