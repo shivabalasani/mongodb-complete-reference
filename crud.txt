@@ -1,0 +1,130 @@
+Create Operations :
+Create or insert operations add new documents to a collection. If the collection does not currently exist, insert operations will create the 
+collection. MongoDB provides the following methods to insert documents into a collection:
+
+db.collection.insertOne(data, options) New in version 3.2
+db.collection.insertMany(data, options) New in version 3.2
+
+eg:-
+db.flightData.insertMany([
+  {
+    "departureAirport": "MUC",
+    "arrivalAirport": "SFO",
+    "aircraft": "Airbus A380",
+    "distance": 12000,
+    "intercontinental": true
+  },
+  {
+    "departureAirport": "LHR",
+    "arrivalAirport": "TXL",
+    "aircraft": "Airbus A320",
+    "distance": 950,
+    "intercontinental": false
+  }
+])
+db.flightData.insertOne({
+     "departureAirport": "MUC",
+     "arrivalAirport": "SFO",
+    "aircraft": "Airbus A380",
+     "distance": 12000,
+    "intercontinental": true
+})
+
+The keys don't need to have double quotes:
+db.flightData.insertOne({
+     departureAirport: "TXL",
+     arrivalAirport: "LHR",
+})
+
+We can use our own unique ID:
+db.flightData.insertOne({
+     departureAirport: "TXL",
+     arrivalAirport: "LHR",
+     _id: "txl-lhr-1"
+})
+
+Data is stored in BSON format:-         
+{
+        "_id" : ObjectId("5e28572d48f4fe848403f323"),
+        "departureAirport" : "MUC",
+        "arrivalAirport" : "SFO",
+        "aircraft" : "Airbus A380",
+        "distance" : 12000,
+        "intercontinental" : true
+}
+"_id" : ObjectId("5e28572d48f4fe848403f323") is not a valid JSON.
+db.flightData.find().pretty()
+
+----------------------------------------------------------------------------------------------------------------------------------------
+Read Operations
+Read operations retrieves documents from a collection; i.e. queries a collection for documents. MongoDB provides the following methods to read documents from a collection:
+
+db.collection.find(filter, options)
+db.collection.findOne(filter, options)
+
+eg:-
+db.flightData.find({intercontinental: true}).pretty()
+db.flightData.find({distance: {$gt: 100}}).pretty()
+db.flightData.findOne({distance: {$gt: 100}}) //returns first match
+----------------------------------------------------------------------------------------------------------------------------------------
+Update Operations
+Update operations modify existing documents in a collection. MongoDB provides the following methods to update documents of a collection:
+
+db.collection.updateOne(filter, data, options) New in version 3.2
+db.collection.updateMany(filter, data, options) New in version 3.2
+db.collection.replaceOne(filter, data, options) New in version 3.2
+
+eg:-
+db.flightData.updateOne({distance : 12000}, {$set: {marker: "delete"}})
+db.flightData.updateMany({}, {$set: {marker: "toDelete"}})
+db.flightData.updateOne({_id : ObjectId("5e2868084e12e004c851c5c0")}, {$set: {delayed: true}})
+
+db.flightData.update({_id : ObjectId("5e2868084e12e004c851c5c0")}, {delayed: false}) //overrides and removes all the other properites
+db.flightData.replaceOne({_id : ObjectId("5e2868084e12e004c851c5c0")}, {
+    "departureAirport": "MUC",
+    "arrivalAirport": "SFO",
+    "aircraft": "Airbus A380",
+    "distance": 12000,
+    "intercontinental": true
+  })
+
+----------------------------------------------------------------------------------------------------------------------------------------
+Delete Operations
+Delete operations remove documents from a collection. MongoDB provides the following methods to delete documents of a collection:
+
+db.collection.deleteOne(filter, options) New in version 3.2
+db.collection.deleteMany(filter, options) New in version 3.2
+
+eg:-
+db.flightData.deleteOne({departureAirport: "TXL"})
+db.flightData.deleteOne({_id: "txl-lhr-1"})
+db.flightData.deleteOne({_id: ObjectId("5e28572d48f4fe848403f323")})
+db.flightData.deleteMany({marker: "toDelete"})
+
+----------------------------------------------------------------------------------------------------------------------------------------
+
+db.passengers.insertMany([   {     "name": "Max Schwarzmueller",     "age": 29   },   {     "name": "Manu Lorenz",     "age": 30   },   {     "name": "Chris Hayton",     "age": 35   },   {     "name": "Sandeep Kumar",     "age": 28   },   {     "name": "Maria Jones",     "age": 30   },   {     "name": "Alexandra Maier",     "age": 27   },   {     "name": "Dr. Phil Evans",     "age": 47   },   {     "name": "Sandra Brugge",     "age": 33   },   {     "name": "Elisabeth Mayr",     "age": 29   },   {     "name": "Frank Cube",     "age": 41   },   {     "name": "Karandeep Alun",     "age": 48   },   {     "name": "Michaela Drayer",     "age": 39   },   {     "name": "Bernd Hoftstadt",     "age": 22   },   {     "name": "Scott Tolib",     "age": 44   },   {     "name": "Freddy Melver",     "age": 41   },   {     "name": "Alexis Bohed",     "age": 35   },   {     "name": "Melanie Palace",     "age": 27   },   {     "name": "Armin Glutch",     "age": 35   },   {     "name": "Klaus Arber",     "age": 53   },   {     "name": "Albert Twostone",     "age": 68   },   {     "name": "Gordon Black",     "age": 38   } ] )
+
+db.passengers.find().pretty() //find returns cursor with first 20 documents. we can't use pretty with findOne
+db.passengers.find().toArray()
+db.passengers.find().forEach((passengerData) => {printjson(passengerData)})
+
+Projections :-
+db.passengers.find({},{name:1}).pretty()
+db.passengers.find({},{name:1, _id:0 }).pretty()
+
+----------------------------------------------------------------------------------------------------------------------------------------
+Embedded Documents:
+    - Can have upto 100 levels of Nesting.
+    - Maximum 16mb document size is allowed.
+
+db.flightData.updateMany({}, {$set: {status: {description: "on-time", lastUpdated: "1 hour ago"}}})
+db.flightData.find({"status.description":"on-time"}).pretty()
+
+----------------------------------------------------------------------------------------------------------------------------------------
+/Embedded Arrays in Documents:
+db.passengers.updateOne({name: "Albert Twostone"}, {$set: {hobbies:["sports","cooking"]}})
+db.passengers.findOne({name: "Albert Twostone"}).hobbies
+db.passengers.find({hobbies: "sports"}).pretty()
+
+

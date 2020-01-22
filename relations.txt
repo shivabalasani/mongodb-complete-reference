@@ -1,0 +1,96 @@
+One to One Relations:-
+use hospital
+db.patients.insertOne({name: "Max", age: 20, diseaseSummary: "summary-max-1"})
+db.patients.findOne()
+
+db.diseaseSummaries.insertOne({_id: "summary-max-1", diseases:["cold", "fever"]})
+db.diseaseSummaries.findOne()
+
+var dsid = db.patients.findOne().diseaseSummary
+db.diseaseSummaries.findOne({_id: dsid})
+
+-----------------------------------------------------------------------------------------------------------
+Embedded Object Approach: Better than above
+db.patients.deleteMany({})
+db.patients.insertOne({name: "Max", age: 20, diseaseSummary: {diseases:["cold", "fever"]}})
+db.patients.findOne()
+
+-----------------------------------------------------------------------------------------------------------
+
+One to Many Relations:-
+use support
+db.questionThreads.insertOne({creator:"Max", question: "How does that work?", answers: ["q1a1", "q1a2"]})
+db.answers.insertMany([{_id: "q1a1", txt: "Like that."}, {_id: "q1a2", txt: "Thanks!"}])
+
+Here also Embedding might be better solution
+db.questionThreads.deleteMany({})
+db.questionThreads.insertOne({creator:"Max", question: "How does that work?", answers: [{text:"Like that."}, {text: "Thanks!"}]})
+
+
+City -> Citizens - In this case splitting up collectins might be better approach than using Embedded document
+use cityData
+db.cities.insertOne({name: "New York City", coordinate: {lat: 21, lng: 55}})
+db.citizens.insertMany([{name: "Skb", cityId: ObjectId("5e28a9024e12e004c851c5e8")},
+                       {name: "Skb", cityId: ObjectId("5e28a9024e12e004c851c5e8")}])
+
+db.citizens.find().pretty()
+
+-----------------------------------------------------------------------------------------------------------
+
+Many to Many Relations:-
+Customer <-> Products (Orders) - One customer has many prodcuts (via orders), a product belonds to many customers.
+
+SQL Approach: 
+use shop
+db.products.insertOne({title: "A Book", price: 12.99})
+db.customers.insertOne({name: "Max", age: 29})
+db.orders.insertOne({productId: ObjectId("5e28abc24e12e004c851c5eb"), customerId: ObjectId("5e28ade84e12e004c851c5ec")})
+
+MongoDb Approach:
+db.orders.drop()
+//Reference driven approach
+db.customers.updateOne({}, {$set: {orders: [{productId: ObjectId("5e28b0094e12e004c851c5ee"), quantity: 2}]}})
+db.customers.findOne()
+{
+        "_id" : ObjectId("5e28b01b4e12e004c851c5ef"),
+        "name" : "Max",
+        "age" : 29,
+        "orders" : [
+                {
+                        "productId" : ObjectId("5e28b0094e12e004c851c5ee"),
+                        "quantity" : 2
+                }
+        ]
+}
+
+//Embedded document approach  
+db.customers.updateOne({}, {$set: {orders: [{title: "A Book", price: 12.99, quantity: 2}]}})
+{
+        "_id" : ObjectId("5e28b01b4e12e004c851c5ef"),
+        "name" : "Max",
+        "age" : 29,
+        "orders" : [
+                {
+                        "title" : "A Book",
+                        "price" : 12.99,
+                        "quantity" : 2
+                }
+        ]
+}
+
+
+-----------------------------------------------------------------------------------------------------------
+Relations - Options
+
+Nested/Embedded Documents
+    - Group data together logically.
+    - Great for data that belonds together and is not really overlapping with other data.
+    - Avoid super-deep nesting(100+ levels) or extremely long arrays(16mb size limit per document).
+
+References 
+    - Split data across collections.
+    - Great for related but shared data as well as for data which is used in relations and standalone.
+    - Allows you to overcome nesting and size limits (by creating new documents).
+
+Use embedded documents if you got one-to-one or one-to-many relationships and no app or data size reason to split.
+Use references if data amount/size or application needs require it or for many-to-many relations.

@@ -1,0 +1,22 @@
+MongoDB enforces no schemas. Documents don't have to use the same schema inside on one collection.
+
+use shop
+//Chaos Schema - Very different. The below inserts has two different schemas in collections.
+db.products.insertOne({name: "A book", price: 12.99})
+db.products.insertOne({title: "T-shirt", seller: {name: "skb", age:30}})
+
+
+//Having different fields in the collections - Extra Data with Equality
+db.products.insertOne({name: "A book", price: 12.99})
+db.products.insertOne({name: "A T-shirt", price: 20.99})
+db.products.insertOne({name: "A Computer", price: 2099, details: {cpu: "Intel i7 8770"}})
+
+db.products.deleteMany({})
+
+//Having same fields in all the collections - Full Equality
+db.products.insertOne({name: "A book", price: 12.99, details:null})
+db.products.insertOne({name: "A T-shirt", price: 20.99, details:null})
+db.products.insertOne({name: "A Computer", price: 2099, details: {cpu: "Intel i7 8770"}})
+
+db.products.deleteMany({})
+

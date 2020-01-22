@@ -1,9 +1,41 @@
+     - A database holds multiple collections where each collection can then hold multiple documents.
+     - Databases and Collections are created "lazily" (i.e when a Document is inserted).
+     - A Document can't directly be inserted into a Database, you need to use a Collection.
+     - Each document needs a unique ID (and gets one by default).
+     - You may have embedded documents and array fields.
+
 To start MongoDB server : mongod (Create directory C:\data\db if the server fails to start)
+                          mongod --port 27018 (To use different port. Default port is 27017)
+                          mongod --help (Options available configure the server)
+                          mongod --dbpath C:\development\Software\mongodb\db  (store the data in different path)
+                          mongod --dbpath C:\development\Software\mongodb\db --logpath C:\development\Software\mongodb\logs\log.log
+                          mongod --fork --logpath C:\development\Software\mongodb\logs\log.log (To run mongod as child process - Only in Mac and Linux)
+                          net start MongoDB ( To start as a  service in windows run this in command prompt as administrator)
+
+To start MongoDB server with the config file we created
+mongod -f C:\development\Software\mongodb\bin\mongod.cfg
+
 
 If you want a different path to start the server with : mongod --dbpath "C:\development\Software\mongodb-data"
+
+To use the mongo shell and run commands : mongo 
+                                          mongo --port 27018
+                                          mongo --help
+> help
+> db.help()
+> db.shop.help()
 
 show dbs
 use shop
 db.products.insertOne({name:"A Book",price : 12.99})
 db.products.find().pretty()
 db.products.insertOne({name:"A Computer",price : 122.99, description:"Test", details: {cpu:"Intel i7", memory: 32}})
+
+To get rid of your data, you can simply load the database you want to get rid of (use databaseName) and then execute db.dropDatabase().
+Similarly, you could get rid of a single collection in a database via db.myCollection.drop().
+
+In Mac you can shutdown the backgroud server by connecting to admin DB
+use admin
+db.shutdownServer()
+
+In Windows - net stop MongoDB
