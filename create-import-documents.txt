@@ -1,0 +1,65 @@
+use contactData
+db.persons.insertOne({name:"Max", age: 30, hobbies: ["Sports", "Cooking"]})
+
+db.persons.insertMany([{name:"Anna", age: 30, hobbies: ["Sports", "Yoga"]}])
+db.persons.insertMany([{name:"Maria", age: 31}, {name:"Chris", age: 25}])
+
+//Do not use insert
+db.persons.insert({name:"Phil", age: 35})
+db.persons.insert([{name:"Sandeep", age: 28}, {name:"Hans", age: 38}])
+
+db.hobbies.insertMany([{_id: "sports", name: "Sports"}, {_id: "cooking", name: "Cooking"}, {_id: "cars", name: "Cars"}])
+
+//Ordered inserts - Inserts yoga and fails to insert cooking so only only 1 document is inserted. hiking will not be inserted.
+db.hobbies.insertMany([{_id: "yoga", name: "Yoga"}, {_id: "cooking", name: "Cooking"}, {_id: "hiking", name: "Hiking"}])
+BulkWriteError({
+        "writeErrors" : [
+                {
+                        "index" : 1,
+                        "code" : 11000,
+                        "errmsg" : "E11000 duplicate key error collection: contactData.hobbies index: _id_ dup key: { _id: \"cooking\" }",
+                        "op" : {
+                                "_id" : "cooking",
+                                "name" : "Cooking"
+                        }
+                }
+        ],
+        "writeConcernErrors" : [ ],
+        "nInserted" : 1,
+        "nUpserted" : 0,
+        "nMatched" : 0,
+        "nModified" : 0,
+        "nRemoved" : 0,
+        "upserted" : [ ]
+})
+
+//To Overrided the above behaviour set ordered to false. This will now insert hiking and fails to insert yoga and cooking
+db.hobbies.insertMany([{_id: "yoga", name: "Yoga"}, {_id: "cooking", name: "Cooking"}, {_id: "hiking", name: "Hiking"}], {ordered: false})
+
+
+//WriteConcern - w : 1 is default. 0 means acknowledged is false means server does not tell if the insert is successful or not
+db.persons.insertOne({name:"Chrissy", age: 41},{writeConcern: {w: 0}}) //returns { "acknowledged" : false }
+
+//Journal default is set to false. If we set it to true then the document will be stored in the Journal of the storage engine.
+db.persons.insertOne({name:"Micheal", age: 51},{writeConcern: {w: 1, j:true}}) 
+
+//To set the timeout
+db.persons.insertOne({name:"Aliya", age: 22},{writeConcern: {w: 1, j:true, wtimeout: 1}}) 
+
+
+Atomicity - MongoDB CRUD operations are Atomic on the Document Level (including Embedded Documents) eg on insertOne but not on insertMany
+We can set the transactions to save as a whole or roll back as a whole (i.e nothing is saved) 
+
+
+To import data
+mongoimport C:\development\MongoDB\tv-shows.json -d movieData -c movies --jsonArray --drop
+
+
+Ordered Inserts
+    - By default, when using insertMany(), inserts are ordered - that means, that the inserting process stops if an error occurs.
+    - You can change this by switching to "unordered inserts" - your inserting process will then continue, even if errors occurred.
+    - In both cases, no successful inserts ( before the error) will be rolled back
+
+WriteConcern
+    - Data should be stored and you can control the "level of guarantee" of that to happen with the writeConern option.
+    - Choose the option value bases on your app requirements.
