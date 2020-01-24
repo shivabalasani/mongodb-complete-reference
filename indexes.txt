@@ -1,0 +1,162 @@
+mongoimport C:\development\MongoDB\persons.json -d contactData -c contacts --drop --jsonArray 
+
+
+use contactData
+db.contacts.find({"dob.age" : {$gt: 60}}).pretty()
+
+db.contacts.explain().find({"dob.age" : {$gt: 60}})
+db.contacts.explain("executionStats").find({"dob.age" : {$gt: 60}}) //Not efficient since totalDocsExamined is 5000
+
+                                                "executionStats" : {
+                                                                "executionSuccess" : true,
+                                                                "nReturned" : 1222,
+                                                                "executionTimeMillis" : 4,
+                                                                "totalKeysExamined" : 0,
+                                                                "totalDocsExamined" : 5000,
+                                                                "executionStages" : {
+                                                                        "stage" : "COLLSCAN",
+                                                                        "filter" : {
+                                                                                "dob.age" : {
+                                                                                        "$gt" : 60
+                                                                                }
+                                                                        },
+                                                                    .........
+
+
+db.contacts.createIndex({"dob.age": 1}) //Create index by sorting age in ascending
+
+db.contacts.explain("executionStats").find({"dob.age" : {$gt: 60}}) //Execution time reduced, Stage is IXSCAN and FETCH
+                                                "executionStats" : {
+                                                                "executionSuccess" : true,
+                                                                "nReturned" : 1222,
+                                                                "executionTimeMillis" : 2,
+                                                                "totalKeysExamined" : 1222,
+                                                                "totalDocsExamined" : 1222,
+                                                                "executionStages" : {
+                                                                        "stage" : "FETCH",
+                                                                        "nReturned" : 1222,
+                                                                        "executionTimeMillisEstimate" : 0,
+                                                                 .........
+
+
+db.contacts.explain("executionStats").find({"dob.age" : {$gt: 20}}) //This takes more time with index with execution time 12 executionTimeMillis
+db.contacts.dropIndex({"dob.age": 1})
+
+db.contacts.explain("executionStats").find({"dob.age" : {$gt: 20}}) //Faster after dropping index with 6 executionTimeMillis
+
+-------------------------------------------------------------------------------------------------------------------------------------
+//Creating compound indexes
+db.contacts.createIndex({gender: 1})
+db.contacts.dropIndex({gender: 1})
+
+db.contacts.createIndex({"dob.age": 1, gender: 1}) //Creates only one index."indexName" : "dob.age_1_gender_1" . left to right
+db.contacts.explain().find({"dob.age" : 35, gender: "male"}) 
+db.contacts.explain().find({"dob.age" : 35})  
+
+db.contacts.explain().find({"dob.age" : 35}).sort({gender: 1})  //Using Indexes for sorting. Uses 32MB of memory to sort
+db.contacts.dropIndex({"dob.age" : 1, "gender" : 1})
+
+-------------------------------------------------------------------------------------------------------------------------------------
+//To get all indexes
+db.contacts.getIndexes()
+
+//Configuring Indexes to create unique indexes
+db.contacts.createIndex({email: 1}, {unique: true}) //"errmsg" : "E11000 duplicate key error collection: contactData.contacts index: email_1 dup key: { email: \"abigail.clark@example.com\" }",
+db.contacts.find({email: "abigail.clark@example.com"}).count() //returns 2
+
+-------------------------------------------------------------------------------------------------------------------------------------
+//Partial filters
+db.contacts.createIndex({"dob.age": 1}, {partialFilterExpression: {gender: "male"}}) //Create index for documents where gender is male
+
+db.contacts.find({"dob.age" : {$gt: 60}}).pretty()  
+db.contacts.explain(). find({"dob.age" : {$gt: 60}}) //COLLSCAN - collection scan is performed insted of index scan
+db.contacts.explain(). find({"dob.age" : {$gt: 60}, gender: "male"}) // IXSCAN - index scan will be used when we specify both age and gender
+
+//Applying partial index
+db.users.createIndex({email: 1}, {unique: true, partialFilterExpression: {email: {$exists: true}}})
+
+-------------------------------------------------------------------------------------------------------------------------------------
+//Time to live index
+db.sessions.insertOne({data: "Test", createdAt: new Date()})
+db.sessions.find().pretty()
+db.sessions.createIndex({createdAt: 1}, {expireAfterSeconds: 10}) //deletes documents after 10 seconds. only works on dates.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+Query Diagnosis & Query Planning
+db.contacts.explain("queryPlanner") - show summary for executed query + winning plan
+db.contacts.explain("executionStats") - show detailed summary for executed query + winning plan + possibly rejected plans
+db.contacts.explain("allPlansExecution") - show detailed summary for executed query + winning plan + winning plan decision process
+
+-------------------------------------------------------------------------------------------------------------------------------------
+//Covered Queries
+db.customers.insertMany([{name: "Max", age : 29, salary: 3000}, {name: "Manu", age : 29, salary: 4000}])
+db.customers.createIndex({name: 1})
+db.customers.explain("executionStats").find({name: "Max"}) //"nReturned" : 1 and "totalDocsExamined" : 1,
+
+//totalDocsExamined can be zero if we do not return _id but only indexed field
+db.customers.explain("executionStats").find({name: "Max"}, {_id: 0, name: 1}) //"totalDocsExamined" : 0,
+
+-------------------------------------------------------------------------------------------------------------------------------------
+//How mongodb rejects a plan
+db.customers.createIndex({age: 1, name: 1})
+db.customers.explain().find({name: "Max", age: 30}) //uses compound index "indexName" : "age_1_name_1" and rejects the index plan which has "indexName" : "name_1"
+
+db.customers.explain("allPlansExecution").find({name: "Max", age: 30}) 
+
+-------------------------------------------------------------------------------------------------------------------------------------
+//Using Multi-Key Indexes
+db.contacts.drop()
+db.contacts.insertOne({name: "Max", hobbies: ["Cooking", "Sports"], addresses: [{street: "Main Street"},{street: "Second street"}]})
+
+db.contacts.createIndex({hobbies: 1})
+
+db.contacts.find({hobbies: "Sports"}).pretty()
+db.contacts.explain("executionStats").find({hobbies: "Sports"}) //"indexName" : "hobbies_1", "isMultiKey" : true,
+
+db.contacts.createIndex({addresses: 1})
+db.contacts.explain("executionStats").find({"addresses.street": "Main Street"}) //uses "stage" : "COLLSCAN" - collection scan
+db.contacts.explain("executionStats").find({addresses: {street: "Main Street"}}) //uses "stage" : "IXSCAN" - indexed scan because it is on the whole document
+
+db.contacts.createIndex({"addresses.street": 1}) //this will create a multi-key index
+
+db.contacts.createIndex({addresses: 1, hobbies: 1}) //"errmsg" : "cannot index parallel arrays [hobbies] [addresses]",
+
+-------------------------------------------------------------------------------------------------------------------------------------
+//Text Indexes
+db.products.insertMany([{title: "A Book", description: "This is an awesome book about a young artist"},{title: "Red T-Shirt", description : "This T-shirt is red and it's pretty awesome"}])
+
+db.products.createIndex({description: "text"})
+
+db.products.find({$text: {$search: "\"Red Shirt\""}}).pretty() //for exact match
+
+//Get the highest scores first
+db.products.find({$text: {$search: "\"Red Shirt\""}}, {score: {$meta: "textScore"}}).sort({score: {$meta: "textScore"}}).pretty() 
+
+db.products.createIndex({title: "text"}) //Error : "codeName" : "IndexOptionsConflict"
+db.products.dropIndex("description_text") //Drop index by name
+
+db.products.createIndex({title: "text", description: "text"}) //Combining text indexes
+
+db.products.insertOne({title: "A Ship", description: "Floats perfectly"})
+db.products.find({$text: {$search: "ship"}}).pretty() 
+db.products.find({$text: {$search: "awesome -t-shirt"}}).pretty()  //Exclude the word t-shirt from the search
+
+db.products.dropIndex("title_text_description_text") 
+//description weights 10 times more than title
+db.products.createIndex({title: "text", description: "text"}, {default_language: "english", weights: {title: 1, description : 10}}) 
+db.products.find({$text: {$search: "red"}},{score: {$meta: "textScore"}}).pretty()
+
+-------------------------------------------------------------------------------------------------------------------------------------
+//Building Indexes in the backgroud
+db.ratings.createIndex({age:1},{backgroud: true}) //collection won't be locked
+
+conn = new Mongo();
+db = conn.getDB("credit");
+
+for (let i = 0; i < 1000000; i++) {
+    db.ratings.insertOne({
+        "person_id": i + 1,
+        "score": Math.random() * 100,
+        "age": Math.floor(Math.random() * 70) + 18 
+    })
+}

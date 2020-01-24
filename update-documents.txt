@@ -1,0 +1,113 @@
+{
+        "_id" : ObjectId("5e29f1635aae9436a8e7cafa"),
+        "name" : "Max",
+        "hobbies" : [
+                {
+                        "title" : "Sports",
+                        "frequency" : 5
+                },
+                {
+                        "title" : "Cooking",
+                        "frequency" : 3
+                }
+        ],
+        "isSporty" : true,
+        "age" : 40,
+        "phone" : 34234324324
+}
+{
+        "_id" : ObjectId("5e29f2215aae9436a8e7cafb"),
+        "name" : "Anna",
+        "hobbies" : [
+                {
+                        "title" : "Sports",
+                        "frequency" : 2
+                },
+                {
+                        "title" : "Yoga",
+                        "frequency" : 3
+                }
+        ],
+        "phone" : "433243243234",
+        "age" : 34,
+        "isSporty" : false
+}
+
+use users
+db.users.updateOne({"_id" : ObjectId("5e29f1635aae9436a8e7cafa")}, 
+{$set: {hobbies: [{title: "Sports", frequency: 5}, {title: "Cooking", frequency: 3}]}}) //Updates first document that matches criteria
+
+db.users.updateMany({"hobbies.title": "Sports"}, {$set: { isSporty: true}}) //set isSporty to true for all documents that has Sports as hobbies title
+{ "acknowledged" : true, "matchedCount" : 2, "modifiedCount" : 2 }
+
+//Updating Multiple fields
+db.users.updateOne({"_id" : ObjectId("5e29f1635aae9436a8e7cafa")}, {$set: {age: 40, phone: 34234324324}})
+
+
+//Increment and Decrement values
+db.users.updateOne({name : "Anna"}, {$inc: {age: 1}, $set: {isSporty: false}})  //Increment age by 1 and set isSporty to false
+db.users.updateOne({name : "Anna"}, {$inc: {age: 1}, $set: {age: 30}}) //"Updating the path 'age' would create a conflict at 'age'"
+
+db.users.updateOne({name : "Anna"}, {$min: {age: 30}}) //Change age of Anna if her age is above 30
+db.users.updateOne({name : "Anna"}, {$max: {age: 35}}) //Change age of Anna if her age is below 35
+db.users.updateOne({name : "Anna"}, {$mul: {age: 1.1}}) //Mutliply age by 1.1
+
+//Getting Rid of fields
+db.users.updateMany({isSporty : true}, {$set: {phone: null}})
+db.users.updateMany({isSporty : true}, {$unset: {phone: ""}}) //removes phone field
+
+
+//renaming fields
+db.users.updateMany({}, {$rename: {age: "totalAge"}}) //renames age field to totalAge
+
+//Update or Insert : Update a document if exists or insert a new document if it does not exists
+db.users.updateOne({name: "Maria"}, {$set: {age: 29, hobbies: [{title: "Good food", frequency: 5}], isSporty: true}},{upsert: true}) 
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+db.sports.updateMany({}, {$set: {title: "Football", requiresTeam: true}}, {upsert: true})
+db.sports.updateMany({}, {$set: {title: "Running", requiresTeam: false}}, {upsert: true}) //updates above document
+
+db.sports.updateMany({title: "Soccer"}, {$set: {requiresTeam: true}}, {upsert: true}) //inserts new document
+
+db.sports.updateMany({requiresTeam: true}, {$set: {minPlayers: 11}}) //set minPlayers
+db.sports.updateMany({requiresTeam: true}, {$inc: {minPlayers: 10}}) //incrment minPlayers by 10
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+//Updating matched array elements
+db.users.find({$and: [{"hobbies.title": "Sports"}, {"hobbies.frequency": {$gte: 3}}]}).pretty()
+db.users.find({hobbies: {$elemMatch: {title: "Sports", frequency: {$gte: 3}}}}).pretty() //this matches both title and frequency in the same element
+
+//If I want to update only the element that matches the criteria instead of whole array elements
+db.users.updateMany({hobbies: {$elemMatch: {title: "Sports", frequency: {$gte: 3}}}}, {$set: {"hobbies.$.highFrequency":true }})
+
+//Updating all array elements
+db.users.find({"hobbies.frequency": {$gt:2}}).pretty()
+db.users.updateMany({"hobbies.frequency": {$gt:2}}, {$set: {"hobbies.$.goodFrequency" : true}}) //only updates the first matching element
+
+db.users.updateMany({totalAge: {$gt:30}}, {$inc: {"hobbies.frequency" : -1}}) //"Cannot create field 'frequency' in element {hobbies: ...
+db.users.updateMany({totalAge: {$gt:30}}, {$inc: {"hobbies.$[].frequency" : -1}}) //all frequencies will be decremented
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+//Finding and updating specific fields
+db.users.find({"hobbies.frequency": {$gt: 2}}).pretty()
+db.users.updateMany({"hobbies.frequency": {$gte: 2}}, {$set: {"hobbies.$[el].goodFrequency": true}}, {arrayFilters:[{"el.frequency": {$gte: 2}}]})
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+//Adding elements to Arrays
+db.users.updateOne({name: "Maria"}, {$push: {hobbies: {title: "Sports", frequency: 2}}}) //push new element to array
+
+db.users.updateOne({name: "Maria"}, {$push: {hobbies: {$each: [{title: "Good Wine", frequency: 1}, {title: "Hiking", frequency: 2}], 
+    $sort: {frequency: -1} }}}) //push elements by sorting frequencies is descending order
+
+
+//Remove elements from Arrays
+db.users.updateOne({name: "Maria"}, {$pull: {hobbies: {title: "Hiking" }}}) //Removes all Hikings
+
+db.users.updateOne({name: "Maria"}, {$pop: {hobbies: 1}}) //Removes last element
+db.users.updateOne({name: "Maria"}, {$pop: {hobbies: -1}}) //Removes first element
+
+db.users.updateOne({name: "Maria"}, {$addToSet: {hobbies: {title: "Hiking", frequency: 2}}}) //addToSet adds unique values

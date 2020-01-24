@@ -1,0 +1,17 @@
+//Delete one document
+db.users.deleteOne({name:"Anna"}) 
+
+//Delete all matching documents where total age is greater than 30 and isSporty is true.
+db.users.deleteMany({totalAge: {$gt: 30}, isSporty: true})
+
+//Delete all matching documents where total age does not exists and isSporty is true.
+db.users.deleteMany({totalAge: {$exists: false}, isSporty: true})
+
+//Delete all documents
+db.users.deleteMany({})
+
+//Drops collection
+db.users.drop()
+
+//Drops database
+db.dropDatabase()
