@@ -1,0 +1,32 @@
+//Capped Collection
+use performance
+db.createCollection("capped", {capped : true, size: 10000, max: 3}) //Default 4 bytes with max 3 documents
+db.capped.insertOne({name: "Max"})
+db.capped.insertOne({name: "Manu"})
+db.capped.insertOne({name: "Anna"})
+
+db.capped.insertOne({name: "Maria"}) //Inserting 4th document will delete Max
+
+db.capped.find().sort({$natural: -1}).pretty()
+
+----------------------------------------------------------------------------------------------------------------------------------------
+//Replica Sets for fault tolerance
+If the Primary Node is Offline it will use Secondary Node
+
+//Sharding (Horizontal Scaling)
+Data is distributed (not replicated) across shards (MongoDB servers)
+Queries are run across all shards
+mongos (Router) will direct to mongod (Server/shard) using Shard Key
+
+----------------------------------------------------------------------------------------------------------------------------------------
+//Deploying a MongoDB servers
+Manage shards
+Manage Replica Sets
+Secure User/Auth Setup
+Protect Web Server/Network
+Update Software
+Regular Backups
+Encryption (Transportation & Rest)
+
+MongoDB Atlas is a Managed Solution
+

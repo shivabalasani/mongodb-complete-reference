@@ -1,0 +1,48 @@
+Creating and Editing Users
+
+mongod --auth
+
+use admin
+db.createUser({user: "skb", pwd: "skb", roles: ["userAdminAnyDatabase"]})
+db.auth('skb', 'skb')
+----------------------------------------------------------------------------------------------------------------------------------------
+
+//Built-in roles
+Database User : read, readWrite
+Database Admin: dbAdmin, userAdmin, dbOwner
+All Database Roles: readAnyDatabase, readWriteAnyDatabase, userAdminAnyDatabase, dbAdminAnyDatabase
+Cluster Admin : clusterManager, clusterMonitor, hostManager, clusterAdmin
+Backup/Restore : backup, Restore
+Superuser : dbOwner (admin), userAdmin(admin), userAdminAnyDatabase, root
+
+----------------------------------------------------------------------------------------------------------------------------------------
+mongo -u skb -p skb --authenticationDatabase admin
+use shop
+db.createUser({user: "appdev", pwd: "dev", roles: ["readWrite"]})
+db.auth('appdev', 'dev')
+
+db.logout()
+mongo -u appdev -p dev --authenticationDatabase shop
+use shop
+db.products.insertOne({name: 'A Book'})
+
+----------------------------------------------------------------------------------------------------------------------------------------
+//Updating and Extending Roles to Other databases
+db.logout()
+use admin
+db.auth('skb', 'skb')
+use shop
+db.updateUser("appdev", {roles: ["readWrite", {role: "readWrite", db: "blog"}]})
+db.getUser('appdev')
+
+----------------------------------------------------------------------------------------------------------------------------------------
+//Transport Encryption
+
+openssl req -newkey rsa:2048 -new -x509 -days 365 -nodes -out mongodb-cert.crt -keyout mongodb-cert.key
+type mongodb-cert.key mongodb-cert.crt > mongodb.pem
+mongod --sslMode requireSSL --sslPEMKeyFile mongodb.pem
+mongo --ssl --sslCAFile mongodb.pem --host localhost
+
+//Encryption at Restore
+Store Encrypted/hashed password
+

@@ -1,0 +1,36 @@
+Integers, Longs, Doubles
+
+Integer (int32) - Only full Numbers -> -2,147,483,648 to 2,147,483,648
+Longs (int64)- Only full Numbers ->  -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807
+Doubles (64bit)- Numbers with decimal places
+High Precision Doubles (128 bit) - Numbers with decimal places
+
+db.numtest.insertOne({a: 1}) //In Mongo Shell (which is based in Javascript) this will be inserted as 64 bit float double. In Python it will be stored as int.
+
+db.persons.insertOne({age: 29})  //will be stored as 29.00000000001
+db.persons.stats() // "size" : 35
+
+db.persons.insertOne({age: NumberInt("29")})  
+db.persons.stats() // "size" : 31
+
+db.companies.insertOne({valuation: NumberInt("5000000000")})
+db.companies.findOne() //{ "_id" : ObjectId("5e2f33b57bc363221f1a92ab"), "valuation" : 705032704 } //wrong value is stored
+
+db.companies.deleteMany({})
+db.companies.insertOne({valuation: NumberLong("1234567890987654321")})
+db.companies.updateOne({}, {$inc: {valuation: 1}}) // won't be incrementing correctly : 1234567890987654400
+db.companies.updateOne({}, {$inc: {valuation: NumberLong("1")}})  //this will increment correctly : NumberLong("1234567890987654322")
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+//What's wrong with Normal Doubles
+db.science.insertOne({a: 0.3, b: 0.1}) //these are 64 bit floating points
+db.science.aggregate([{$project: { result: {$subtract: ["$a", "$b"]}}}]) //"result" : 0.19999999999999998 . Not 0.2
+
+db.science.deleteMany({})
+db.science.insertOne({a: NumberDecimal("0.3"), b: NumberDecimal("0.1")}) //these are 64 bit floating points
+db.science.aggregate([{$project: { result: {$subtract: ["$a", "$b"]}}}]) // "result" : NumberDecimal("0.2")
+
+db.science.updateOne({}, {$inc: {a: 0.1}}) //"a" : NumberDecimal("0.400000000000000"). Not precise
+
+//better way to update
+db.science.updateOne({}, {$inc: {a: NumberDecimal("0.1")}}) // "a" : NumberDecimal("0.4")

@@ -1,0 +1,23 @@
+----------------------------------------------------------------------------------------------------------------------------------------
+//Transactions
+
+use blog
+db.users.insertOne({name: "Max"})
+db.posts.insertMany([{title: "First Post", userId : ObjectId("5e2f53b38a5e934c8cd428ca")}, {title: "Second Post", userId : ObjectId("5e2f53b38a5e934c8cd428ca")}])
+
+const session = db.getMongo().startSession()
+const userCol = session.getDatabase("blog").users
+const postsCol = session.getDatabase("blog").posts
+
+session.startTransaction()
+
+db.users.find().pretty()
+usersCol.deleteOne({_id: ObjectId("5e2f53b38a5e934c8cd428ca")})
+db.users.find().pretty() //user won't be deleted yet
+
+postsCol.deleteMany({userId: ObjectId("5e2f53b38a5e934c8cd428ca")})
+db.posts.find().pretty() //posts are not deleted yet
+
+session.commitTransaction() //this will delete the users and posts. These transactions will succeed or fail together
+
+session.abortTransaction()  //this will abort the transaction
