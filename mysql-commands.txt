@@ -1,0 +1,48 @@
+SQL Commands
+
+mysql-ctl cli; 
+
+show databases; 
+SHOW TABLES;
+USE <database name>;
+SELECT database();
+source create.sql
+
+// ================================ CREATE =================================================
+The general command for creating a database: CREATE DATABASE database_name; 
+CREATE TABLE cats
+    (
+        cat_id INT NOT NULL AUTO_INCREMENT,
+        name VARCHAR(100),
+        age INT,
+        PRIMARY KEY(cat_id)
+    );
+ 
+DESC cats;
+
+INSERT INTO cats(name, age) VALUES(‘Taco’, 14);
+
+// ================================ READ =================================================
+SELECT CONCAT_WS(' - ', title, author_fname, author_lname) FROM books;
+SELECT SUBSTRING(REPLACE(title, 'e', '3'), 1, 10) AS 'weird string' FROM books;
+SELECT CONCAT(author_fname, REVERSE(author_fname)) FROM books;
+SELECT CONCAT(author_lname, ' is ', CHAR_LENGTH(author_lname), ' characters long') FROM books;
+SELECT UPPER(CONCAT(author_fname, ' ', author_lname)) AS "full name in caps" FROM books;
+SELECT DISTINCT CONCAT(author_fname,' ', author_lname) FROM books;
+SELECT title, author_fname, author_lname FROM books ORDER BY 1 DESC;
+SELECT * FROM tbl LIMIT 95,18446744073709551615;
+SELECT title, stock_quantity FROM books WHERE stock_quantity LIKE '____';
+SELECT COUNT(*) FROM books WHERE title LIKE '%the%';
+SELECT author_fname, author_lname, COUNT(*) FROM books GROUP BY author_lname, author_fname;
+SELECT CONCAT(author_fname, ' ', author_lname) AS author, MAX(pages) AS 'longest book' FROM books GROUP BY author_lname, author_fname;
+SELECT released_year AS year, COUNT(*) AS '# of books', AVG(pages) AS 'avg pages' FROM books GROUP BY released_year;
+
+
+// ================================ UPDATE =================================================
+UPDATE cats SET age=14 WHERE name='Misty';
+
+// ================================ DELETE =================================================
+To drop a database: DROP DATABASE database_name; 
+Dropping Tables : DROP TABLE <tablename>; 
+
+DELETE FROM cats WHERE name='Egg'

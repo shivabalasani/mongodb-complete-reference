@@ -1,0 +1,4 @@
+Splitting work between drivers and shell
+
+Shell - Configure Database, Create Collections, Create Indexes
+Drivers - CRUD operations, Aggregation Pipelines
