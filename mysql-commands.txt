@@ -1,9 +1,16 @@
 SQL Commands
 
 mysql-ctl cli; 
+$ mysql -u root -p
+Enter password: password
+
+mysql> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'your_new_password';
+mysql> FLUSH PRIVILEGES;
+mysql> quit
 
 show databases; 
 SHOW TABLES;
+show triggers;
 USE <database name>;
 SELECT database();
 source create.sql
@@ -44,5 +51,6 @@ UPDATE cats SET age=14 WHERE name='Misty';
 // ================================ DELETE =================================================
 To drop a database: DROP DATABASE database_name; 
 Dropping Tables : DROP TABLE <tablename>; 
+Dropping Trigger: DROP TRIGGER <triggername>;
 
 DELETE FROM cats WHERE name='Egg'
